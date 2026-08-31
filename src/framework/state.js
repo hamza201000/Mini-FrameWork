@@ -2,48 +2,21 @@
 export let store = {}
 
 export function getValue(name) {
-    Object.entries(store).forEach((funcStore, valueStore) => {
-        if (funcStore === name) {
-            return valueStore
-        }
-    });
-    return null
+   return store[name];
 }
 
 export function setValue(value, name) {
-        store[name]=value
+        store[name]=value;
 }
 
+//  function cmpVdom(Vdom1,Vdom2){
 
 
 
 
 
+// }
 
 
-
-
-
-
-
-
-
-export function createStore(initialState) {
-
-    const getState = () => {
-        return initialState
-    }
-    const changeSate = () => {
-
-
-
-    }
-
-
-    return {
-        getState
-    }
-
-}
 
 
