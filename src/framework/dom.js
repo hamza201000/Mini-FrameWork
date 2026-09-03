@@ -1,21 +1,24 @@
 
 
-function domToObject(element){
+function domToObject(element,id){
   const obj = {
-    tag: element.tagName.toLowerCase(),
-    attrs: {},
-     text:element.textContent.trim(),
-    children: []
+    "tag": element.tagName.toLowerCase(),
+    "attrs": {},
+     "text":element.innerText.trim(),
+    "children": [],
+    "oPid":id++
   };
-  console.log();
+  
+  
+  console.log(element.childNodes);
   
   for (const attr of element.attributes) {
     obj.attrs[attr.name] = attr.value;
   }
-    
-  
   for (const child of element.children) {
-    obj.children.push(domToObject(child));
+    // console.log(child);
+    
+    obj.children.push(domToObject(child,id));
   }
   return obj;
 }
@@ -25,11 +28,12 @@ export function convertChToVdom(html){
     template.innerHTML=html.trim()
     const card = template.content;
     const children=[]
+    let id=0;
     console.log(card.children);
+    
     for (const elem of card.children){
-      
-        children.push(domToObject(elem))
+        
+        children.push(domToObject(elem,id))
     }
-    console.log(children);
     return children
 }
