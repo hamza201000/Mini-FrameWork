@@ -7,8 +7,6 @@ export function setValue(value, name) {
         store[name] = value;
 }
 export function cmpVdom(oldDom, newDom) {
-        //  console.log(newDom);
-        //  console.log(oldDom);
         let newObj = {}
         let newArr = []
         let newElm = null;
@@ -17,27 +15,21 @@ export function cmpVdom(oldDom, newDom) {
         for (let i = 0; i < newDom.length; i++) {
                 newElm = newDom[i]
                 oldElm = oldDom[i]
-                if ((newElm["tag"] != oldElm["tag"]) || (!oldElm["tag"])) {
-                        newObj = {
-                                "tag": newElm["tag"]
-                        }
-                        if (Object.keys(newObj).length > 0) {
-                                newArr.push(newObj)
-                        }
+                if (((!oldElm)||(newElm["tag"] != oldElm["tag"]))) {
+                                console.log("here",newElm,":",oldElm);
+                                newArr.push(newElm)
+                        
                         continue
                 }
                 for (const [key, value] of Object.entries(newElm)) {
 
                         if ((key === "oPid")|| !oneHasData(oldElm[key],value)) {
-                                console.log("here",value);
                                 continue
                         }
                         if ((Array.isArray(value) && value.length > 0 && oldElm[key].length > 0)) {
                                 if (oldElm[key].length == 0) {
                                         newArr.push(value)
                                 } else if (value.length > 0) {
-                                        console.log(value);
-
                                         buff = cmpVdom(oldElm[key], value)
                                         if (buff.length > 0) {
                                                 newArr.push(buff)
@@ -50,7 +42,7 @@ export function cmpVdom(oldDom, newDom) {
                                                 [key]: newElm[key]
                                         }
                                         newArr.push(newObj)
-
+                                        
                                 }
                         } else if ((value != oldElm[key]) || (!oldElm[key])) {
                                 newObj = {
@@ -67,9 +59,7 @@ export function cmpVdom(oldDom, newDom) {
 }
 
 export function cmpObj(oldObj, newObj) {
-
         for (const [key, value] of Object.entries(newObj)) {
-
                 if (value != oldObj[key]) {
                         return true
                 }

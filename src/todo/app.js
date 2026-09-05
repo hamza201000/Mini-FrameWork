@@ -21,9 +21,10 @@ const html2 = `<div class="app">
 <p class="a">hi</p>
         </div>`
 
-        console.log(html);
-        console.log(html2);
+console.log(html);
+console.log(html2);
 
-// console.log(cmpVdom(convertChToVdom(html.trim()), convertChToVdom(html2.trim())));
-console.log(convertChToVdom(html2));
+// console.log(convertChToVdom(html));
+//  console.log(convertChToVdom(html2));
+console.log(cmpVdom(convertChToVdom(html.trim()), convertChToVdom(html2.trim())));
 
