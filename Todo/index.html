@@ -5,9 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TodoMVC: Zone01</title>
     <link href="app.css" rel="stylesheet">
+    <style>
+        nav { padding: 10px; background: #f4f4f4; margin-bottom: 20px; }
+        nav a { margin-right: 15px; text-decoration: none; transition: 0.3s; }
+    </style>
 </head>
 <body>
-    <section class="todoapp" id="root"></section>
+
+    <nav>
+        <a href="#/">Home</a>
+        <a href="#/active">Todos</a>
+        <a href="#/completed">Completed</a>
+        <a href="#/not_found">Test 404</a>
+    </nav>
+    
+    <div id="app">Loading...</div>
+    <section class="todoapp" id="root">
+    </section>
+
     <footer class="info">
         <p>Double-click to edit a todo</p>
         <p>Created by the TodoMVC Team</p>
@@ -16,5 +31,6 @@
         </p>
     </footer>
     
+    <script type="module" src="./base.js"></script>
 </body>
 </html>
