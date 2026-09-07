@@ -1,6 +1,16 @@
+import { createNode } from '../src/framework/dom.js';
 import AppRouter from '../src/framework/router.js';
+import {updateVdom } from '../src/framework/state.js';
 // console.log("Base.js is loaded!");
 // document.getElementById('app').innerHTML = "<h1>JavaScript is Working!</h1>";
+
+const html = createNode("div",{class:"app"},[createNode("p",{},["hi"])])
+const html2=createNode("div",{class:"app"},[createNode("p",{},[])])
+console.log(html);
+console.log(html2);
+
+console.log(updateVdom([html],[html2]));
+
 
 const Home = () => `<h1> Home Page</h1><p>Welcome to TodoMVC!</p>`;
 const Active = () => `<h1>⚡ Active Todos</h1><p>Things to do...</p>`;
@@ -38,3 +48,5 @@ myRouter.subscribe((Component) => {
         }
     });
 });
+
+

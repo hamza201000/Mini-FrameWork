@@ -1,72 +1,81 @@
+export let store = {};
 
-export let store = {}
+const listeners = new Set();
+
 export function getValue(name) {
-        return store[name];
-}
-export function setValue(value, name) {
-        store[name] = value;
+    return store[name];
 }
 
-let lastID=null;
-export function cmpVdom(oldDom = [], newDom = []) {
-    const changes = [];
-    
-    const maxLength = Math.max(oldDom.length, newDom.length);
-    // console.log(key ,":",newValue);
-    
-    console.log(oldDom.length);
-    for (let i = 0; i < maxLength; i++) {
+export function setValue(value, name) {
+    const oldValue = store[name];
+
+    if (isEqual(oldValue, value)) {
+        return;
+    }
+
+    store[name] = value;
+
+    for (const listener of listeners) {
+        listener({
+            name,
+            value,
+            oldValue,
+            store
+        });
+    }
+}
+
+export function subscribe(listener) {
+    listeners.add(listener);
+
+    return () => {
+        listeners.delete(listener);
+    };
+}
+
+export function updateVdom(oldDom = [], newDom = []) {
+    oldDom.length = newDom.length;
+
+    for (let i = 0; i < newDom.length; i++) {
         const oldElm = oldDom[i];
         const newElm = newDom[i];
-        if (oldElm){
-            lastID=oldElm.oPid;
-        }
-        if (oldElm === undefined && newElm !== undefined) {
-            // console.log(newElm);
-            changes.push({newElm,lastID});
+
+        if (oldElm === undefined) {
+            oldDom[i] = structuredClone(newElm);
             continue;
         }
-        if (newElm === undefined) {
-            changes.push({
-                oPid: oldElm?.oPid,
-                remove: true
-            });
+
+        if (oldElm?.tag !== newElm?.tag) {
+            oldDom[i] = structuredClone(newElm);
             continue;
         }
-        if (
-            oldElm?.tag !== newElm?.tag
-        ) {
-            changes.push(newElm);
-            continue;
+
+        for (const key of Object.keys(oldElm)) {
+            if (!(key in newElm)) {
+                delete oldElm[key];
+            }
         }
-        const elementChanges = {
-            oPid: newElm.oPid
-        };
-        let changed = false;
+
         for (const [key, newValue] of Object.entries(newElm)) {
-            if (key === "oPid") {
+            const oldValue = oldElm[key];
+
+            if (Array.isArray(newValue)) {
+                if (!Array.isArray(oldValue)) {
+                    oldElm[key] = structuredClone(newValue);
+                } else {
+                    updateVdom(oldValue, newValue);
+                }
+
                 continue;
             }
-            const oldValue = oldElm[key];
+
             if (!isEqual(oldValue, newValue)) {
-                if (Array.isArray(newValue) && Array.isArray(oldValue)) {
-                    const childChanges = cmpVdom(oldValue, newValue);
-                    
-                    if (childChanges.length > 0) {
-                        elementChanges[key] = childChanges;
-                        changed = true;
-                    }
-                } else {
-                    elementChanges[key] = newValue;
-                    changed = true;
-                }
+                oldElm[key] = structuredClone(newValue);
             }
         }
-        if (changed) {
-            changes.push(elementChanges);
-        }
     }
-    return changes;
+
+    return oldDom;
 }
 
 export function isEqual(oldValue, newValue) {
@@ -74,7 +83,6 @@ export function isEqual(oldValue, newValue) {
         return true;
     }
 
-    
     if (oldValue == null || newValue == null) {
         return false;
     }
@@ -83,7 +91,6 @@ export function isEqual(oldValue, newValue) {
         return false;
     }
 
-    
     if (Array.isArray(oldValue) || Array.isArray(newValue)) {
         if (!Array.isArray(oldValue) || !Array.isArray(newValue)) {
             return false;
@@ -128,35 +135,3 @@ export function isEqual(oldValue, newValue) {
 
     return false;
 }
-
-export function cmpObj(oldObj, newObj) {
-        for (const [key, value] of Object.entries(newObj)) {
-                if (value != oldObj[key]) {
-                        return true
-                }
-        }
-        return false
-}
-function hasData(value) {
-        if (value === null || value === undefined) {
-                return false;
-        }
-        if (typeof value === "string") {
-                return value.trim().length > 0;
-        }
-        if (Array.isArray(value)) {
-                return value.length > 0;
-        }
-        if (typeof value === "object") {
-                return Object.keys(value).length > 0;
-        }
-        return true;
-}
-
-function oneHasData(value1, value2) {
-        return hasData(value1) || hasData(value2);
-}
-
-
-
-
