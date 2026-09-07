@@ -1,137 +1,65 @@
-export let store = {};
-
+// 1. Private Variables (Encapsulation)
+let store = {};
 const listeners = new Set();
+const refs = new Map();
 
-export function getValue(name) {
-    return store[name];
+// --- HELPER: Deep Equality Check ---
+// Essential for optimization (Requirement: Virtual DOM / Diffing)
+export function isEqual(a, b) {
+    if (a === b) return true;
+    if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+        if (!keysB.includes(key) || !isEqual(a[key], b[key])) return false;
+    }
+    return true;
 }
 
-export function setValue(value, name) {
-    const oldValue = store[name];
+// --- STATE MANAGEMENT (Requirement: Reachable at all times) ---
+export const getState = () => ({ ...store });
 
-    if (isEqual(oldValue, value)) {
-        return;
-    }
+export const setState = (newState) => {
+    const oldStore = { ...store };
+    const mergedStore = { ...store, ...newState };
 
-    store[name] = value;
+    // Optimization: Don't notify if the values are the same
+    if (isEqual(oldStore, mergedStore)) return;
 
-    for (const listener of listeners) {
-        listener({
-            name,
-            value,
-            oldValue,
-            store
-        });
-    }
-}
+    store = mergedStore;
+    notify(oldStore);
+};
 
-export function subscribe(listener) {
+// --- SUBSCRIPTION (Requirement: Inversion of Control) ---
+export const subscribe = (listener) => {
     listeners.add(listener);
+    // Return unsubscribe function
+    return () => listeners.delete(listener);
+};
 
-    return () => {
-        listeners.delete(listener);
-    };
-}
+const notify = (oldStore) => {
+    listeners.forEach(listener => listener({ store, oldStore }));
+};
 
-export function updateVdom(oldDom = [], newDom = []) {
-    oldDom.length = newDom.length;
+// --- REF MANAGEMENT (Requirement: Event Handling) ---
+// Allows the developer to access real DOM elements safely
+export const createRef = () => ({ current: null });
 
-    for (let i = 0; i < newDom.length; i++) {
-        const oldElm = oldDom[i];
-        const newElm = newDom[i];
+export const setRef = (key, element) => {
+    refs.set(key, element);
+};
 
-        if (oldElm === undefined) {
-            oldDom[i] = structuredClone(newElm);
-            continue;
-        }
+export const getRef = (key) => {
+    return refs.get(key);
+};
 
-        if (oldElm?.tag !== newElm?.tag) {
-            oldDom[i] = structuredClone(newElm);
-            continue;
-        }
+export const removeRef = (key) => {
+    refs.delete(key);
+};
 
-        for (const key of Object.keys(oldElm)) {
-            if (!(key in newElm)) {
-                delete oldElm[key];
-            }
-        }
-
-        for (const [key, newValue] of Object.entries(newElm)) {
-            const oldValue = oldElm[key];
-
-            if (Array.isArray(newValue)) {
-                if (!Array.isArray(oldValue)) {
-                    oldElm[key] = structuredClone(newValue);
-                } else {
-                    updateVdom(oldValue, newValue);
-                }
-
-                continue;
-            }
-
-            if (!isEqual(oldValue, newValue)) {
-                oldElm[key] = structuredClone(newValue);
-            }
-        }
-    }
-
-    return oldDom;
-}
-
-export function isEqual(oldValue, newValue) {
-    if (oldValue === newValue) {
-        return true;
-    }
-
-    if (oldValue == null || newValue == null) {
-        return false;
-    }
-
-    if (typeof oldValue !== typeof newValue) {
-        return false;
-    }
-
-    if (Array.isArray(oldValue) || Array.isArray(newValue)) {
-        if (!Array.isArray(oldValue) || !Array.isArray(newValue)) {
-            return false;
-        }
-
-        if (oldValue.length !== newValue.length) {
-            return false;
-        }
-
-        for (let i = 0; i < oldValue.length; i++) {
-            if (!isEqual(oldValue[i], newValue[i])) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    if (
-        typeof oldValue === "object" &&
-        typeof newValue === "object"
-    ) {
-        const oldKeys = Object.keys(oldValue);
-        const newKeys = Object.keys(newValue);
-
-        if (oldKeys.length !== newKeys.length) {
-            return false;
-        }
-
-        for (const key of newKeys) {
-            if (!Object.prototype.hasOwnProperty.call(oldValue, key)) {
-                return false;
-            }
-
-            if (!isEqual(oldValue[key], newValue[key])) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    return false;
-}
+// --- VDOM HELPER (Requirement: Abstracting the DOM) ---
+// This handles the cloning of the tree to prevent direct mutation
+export const syncVdom = (newDom) => {
+    return JSON.parse(JSON.stringify(newDom));
+};
