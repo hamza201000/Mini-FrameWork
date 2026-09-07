@@ -50,7 +50,8 @@
 // });
 
 
-import { h, createStore, patch, createElm } from '../src/framework/dom.js';
+import { h, patch, createElm } from '../src/framework/dom.js';
+import { createStore } from '../src/framework/state.js';
 
 const root = document.getElementById('app');
 

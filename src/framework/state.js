@@ -63,3 +63,17 @@ export const removeRef = (key) => {
 export const syncVdom = (newDom) => {
     return JSON.parse(JSON.stringify(newDom));
 };
+
+// --- STORE FACTORY (Requirement: Reachable at all times) ---
+// Creates a reactive store using a Proxy.
+// Any direct property assignment (e.g. state.count++) automatically
+// triggers the provided notifyCallback so the UI re-renders.
+export function createStore(initialState, notifyCallback) {
+    return new Proxy(initialState, {
+        set(target, key, value) {
+            target[key] = value;
+            if (typeof notifyCallback === 'function') notifyCallback();
+            return true;
+        }
+    });
+}
