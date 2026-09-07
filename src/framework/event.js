@@ -3,24 +3,24 @@ export class EventManager {
         this.root = rootElement;
     }
 
-    // Sets up a single delegated native listener per event type on the root
     init(eventTypes = ['click', 'input', 'change', 'submit']) {
-        for (const type of eventTypes) {
-            this.root.addEventListener(type, (event) => {
-                let current = event.target;
-
-                while (current && current !== this.root) {
-                    if (current._handlers && current._handlers[event.type]) {
-                        current._handlers[event.type](event);
-                        break;
-                    }
-                    current = current.parentElement;
-                }
-            });
+     for (const type of eventTypes) {
+    // Blur and Focus don't bubble, so we MUST use capture true
+    const useCapture = (type === 'blur' || type === 'focus');
+    
+    this.root.addEventListener(type, (event) => {
+        let current = event.target;
+        while (current && current !== this.root.parentElement) { 
+            if (current._handlers && current._handlers[event.type]) {
+                current._handlers[event.type](event);
+                break;
+            }
+            current = current.parentElement;
         }
+    }, useCapture); // Add this parameter
+}
     }
 
-    // Attach a handler to a real DOM element (no new native listener added)
     on(element, eventType, handler) {
         if (!element._handlers) element._handlers = {};
         element._handlers[eventType] = handler;

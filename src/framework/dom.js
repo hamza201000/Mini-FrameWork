@@ -83,8 +83,9 @@ export function patch(parent, newVNode, oldVNode, index = 0) {
         (typeof newVNode === 'string' && newVNode !== oldVNode) ||
         newVNode.type !== oldVNode.type
     ) {
-        parent.replaceChild(createElm(newVNode), el);
-    } 
+ if (newVNode !== oldVNode) {
+        el.nodeValue = newVNode; 
+    }    } 
     else if (newVNode.type) {
         updateAttrs(el, newVNode.props, oldVNode.props);
 

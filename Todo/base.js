@@ -1,95 +1,135 @@
-// import { createNode } from '../src/framework/dom.js';
-// import AppRouter from '../src/framework/router.js';
-// import {updateVdom } from '../src/framework/state.js';
-// // console.log("Base.js is loaded!");
-// // document.getElementById('app').innerHTML = "<h1>JavaScript is Working!</h1>";
-
-// const html = createNode("div",{class:"app"},[createNode("p",{},["hi"])])
-// const html2=createNode("div",{class:"app"},[createNode("p",{},[])])
-// console.log(html);
-// console.log(html2);
-
-// console.log(updateVdom([html],[html2]));
-
-
-// const Home = () => `<h1> Home Page</h1><p>Welcome to TodoMVC!</p>`;
-// const Active = () => `<h1>⚡ Active Todos</h1><p>Things to do...</p>`;
-// const Completed = () => `<h1>Completed</h1><p>Well done!</p>`;
-// const NotFound = () => `<h1 style="color:red">404 - Not Found</h1>`;
-
-// // 2. Initialize the Router
-// const myRouter = new AppRouter({
-//     defaultRoute: '#/',
-//     notFoundRoute: '#/404',
-//     routes: {
-//         '#/': Home,
-//         '#/active': Active,
-//         '#/completed': Completed,
-//         '#/404': NotFound
-//     }
-// });
-
-// const appDiv = document.getElementById('app');
-
-// myRouter.subscribe((Component) => {
-//     console.log("Navigated to:", myRouter.currentPath);
-    
-//     if (appDiv) {
-//         appDiv.innerHTML = Component();
-//     }
-
-//     document.querySelectorAll('nav a').forEach(link => {
-//         if (link.getAttribute('href') === myRouter.currentPath) {
-//             link.style.fontWeight = 'bold';
-//             link.style.color = 'black';
-//         } else {
-//             link.style.fontWeight = 'normal';
-//             link.style.color = 'blue';
-//         }
-//     });
-// });
-
-
 import { h, patch, createElm } from '../src/framework/dom.js';
 import { createStore } from '../src/framework/state.js';
+import { EventManager } from '../src/framework/event.js';
+import AppRouter from '../src/framework/router.js';
 
-const root = document.getElementById('app');
+const events = new EventManager(document.getElementById('root'));
+events.init(['click', 'input', 'change', 'submit', 'dblclick', 'keydown', 'blur']);
 
-let oldVNode = null;
+const state = createStore({
+    todos: JSON.parse(localStorage.getItem('todos-js') || '[]'),
+    draft: '',
+    editingId: null,
+    route: window.location.hash || '#/'
+}, () => {
+    render();
+    localStorage.setItem('todos-js', JSON.stringify(state.todos));
+});
 
-const updateUI = () => {
-    console.log("leets update the state ")
-    const newVNode = App(); 
-    
-    if (oldVNode === null) {
-        root.appendChild(createElm(newVNode));
-    } else {
-        patch(root, newVNode, oldVNode);
-    }
-    
-    // Save the current tree as the 'old' tree for the next update
-    oldVNode = newVNode;
+const actions = {
+    addTodo: () => {
+        if (state.draft.trim().length < 2) return;
+        state.todos = [...state.todos, { id: Date.now(), title: state.draft.trim(), completed: false }];
+        state.draft = '';
+    },
+    toggleTodo: (id) => {
+        state.todos = state.todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+    },
+    removeTodo: (id) => {
+        state.todos = state.todos.filter(t => t.id !== id);
+    },
+    clearCompleted: () => {
+        state.todos = state.todos.filter(t => !t.completed);
+    },
+    toggleAll: (val) => {
+        state.todos = state.todos.map(t => ({ ...t, completed: val }));
+    },
+    saveEdit: (id, title) => {
+        if (title.trim()) {
+            state.todos = state.todos.map(t => t.id === id ? { ...t, title: title.trim() } : t);
+        } else {
+            actions.removeTodo(id);
+        }
+        state.editingId = null;
+    },
+ondblclick: () => {
+    state.editingId = todo.id;
+    setTimeout(() => {
+        const input = document.querySelector('.edit');
+        if (input) {
+            input.focus();
+            const val = input.value;
+            input.value = '';
+            input.value = val;
+        }
+    }, 0);
+}
 };
 
-//  INITIALIZE THE STATE (Requirement: Reachable at all times)
-// We pass updateUI as the callback so the Proxy triggers a re-render automatically.
-const state = createStore({ count: 0, text: '' }, updateUI);
+new AppRouter({
+    routes: {
+        '#/': () => state.route = '#/',
+        '#/active': () => state.route = '#/active',
+        '#/completed': () => state.route = '#/completed'
+    }
+});
 
-// 
-// DEFINE THE COMPONENT (Requirement: Abstracting the DOM via h)
-function App() {
-    return h('div', { class: 'container' }, [
-        h('h1', {}, `Count: ${state.count}`),
-        h('input', { 
-            type: 'text', 
-            value: state.text, 
-            placeholder: 'Type something...',
-            oninput: (e) => state.text = e.target.value 
-        }),
-        h('p', {}, `You typed: ${state.text}`),
-        h('button', { onclick: () => state.count++ }, 'Increment'),
-        h('button', { onclick: () => state.count-- }, 'Decrement')
+const TodoItem = (todo) => {
+    const isEditing = state.editingId === todo.id;
+    return h('li', { class: `${todo.completed ? 'completed' : ''} ${isEditing ? 'editing' : ''}` }, [
+        h('div', { class: 'view' }, [
+            h('input', { class: 'toggle', type: 'checkbox', checked: todo.completed, onchange: () => actions.toggleTodo(todo.id) }),
+            h('label', { ondblclick: () => state.editingId = todo.id }, todo.title),
+            h('button', { class: 'destroy', onclick: () => actions.removeTodo(todo.id) })
+        ]),
+        isEditing ? h('input', { 
+            class: 'edit', 
+            value: todo.title, 
+            onkeydown: (e) => {
+                if (e.key === 'Enter') actions.saveEdit(todo.id, e.target.value);
+                if (e.key === 'Escape') state.editingId = null;
+            },
+            onblur: (e) => actions.saveEdit(todo.id, e.target.value)
+        }) : null
     ]);
-}
+    
+};
 
-updateUI();
+const App = () => {
+    const filtered = state.todos.filter(t => 
+        state.route === '#/active' ? !t.completed : 
+        state.route === '#/completed' ? t.completed : true
+    );
+    const activeCount = state.todos.filter(t => !t.completed).length;
+
+    return h('div', { class: 'todoapp' }, [
+        h('header', { class: 'header' }, [
+            h('h1', {}, 'todos'),
+            h('input', { 
+                class: 'new-todo', 
+                placeholder: 'What needs to be done?', 
+                value: state.draft,
+                oninput: (e) => state.draft = e.target.value,
+                onkeydown: (e) => e.key === 'Enter' && actions.addTodo()
+            })
+        ]),
+        state.todos.length ? h('section', { class: 'main' }, [
+            h('input', { id: 'toggle-all', class: 'toggle-all', type: 'checkbox', onchange: (e) => actions.toggleAll(e.target.checked) }),
+            h('label', { for: 'toggle-all' }, 'Mark all as complete'),
+            h('ul', { class: 'todo-list' }, filtered.map(TodoItem))
+        ]) : null,
+        state.todos.length ? h('footer', { class: 'footer' }, [
+            h('span', { class: 'todo-count' }, [h('strong', {}, activeCount), ' items left']),
+            h('ul', { class: 'filters' }, [
+                h('li', {}, h('a', { href: '#/', class: state.route === '#/' ? 'selected' : '' }, 'All')),
+                h('li', {}, h('a', { href: '#/active', class: state.route === '#/active' ? 'selected' : '' }, 'Active')),
+                h('li', {}, h('a', { href: '#/completed', class: state.route === '#/completed' ? 'selected' : '' }, 'Completed'))
+            ]),
+            state.todos.some(t => t.completed) ? h('button', { class: 'clear-completed', onclick: actions.clearCompleted }, 'Clear completed') : null
+        ]) : null
+    ]);
+};
+
+let oldV = null;
+const root = document.getElementById('root');
+function render() {
+    const newV = App();
+    if (!oldV) {
+        root.innerHTML = '';
+        root.appendChild(createElm(newV));
+    } else {
+        patch(root, newV, oldV);
+    }
+    oldV = newV;
+}
+render();
