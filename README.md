@@ -1,315 +1,118 @@
-# Mini-FrameWork
-
-A small JavaScript framework built from scratch.
-
-The goal of this project is to create a simple framework that provides:
-
-* DOM abstraction
-* Event handling
-* State management
-* Routing
-* TodoMVC application
-
-No external frontend framework such as React, Vue, or Angular is used.
 
 ---
 
-## Project Architecture
+# Mini-Framework: A Reactive VDOM Engine
 
-```text
-mini-framework/
-│
-├── src/
-│   │
-│   ├── framework/
-│   │   ├── dom.js
-│   │   ├── events.js
-│   │   ├── state.js
-│   │   ├── router.js
-│   │   └── index.js
-│   │
-│   └── todo/
-│       ├── app.js
-│       ├── components.js
-│       └── state.js
-│
-├── index.html
-├── style.css
-└── README.md
-```
+Welcome to our custom **Mini-Framework**, a lightweight JavaScript framework built from scratch. This project demonstrates the core principles of modern web frameworks: **Inversion of Control**, **Virtual DOM Abstraction**, **Reactive State Management**, and **Event Delegation**.
 
-### Framework
+##  Getting Started
 
-The `framework/` folder contains the code of the framework itself.
+To run the framework and the included TodoMVC application:
 
-#### `dom.js`
-
-Responsible for creating and updating DOM elements.
-
-Example:
-
-```js
-h("div", { class: "container" }, [
-    h("h1", {}, ["Hello"])
-])
-```
-
-#### `events.js`
-
-Responsible for handling user events.
-
-Example:
-
-```js
-h("button", {
-    on: {
-        click: () => console.log("Clicked")
-    }
-}, ["Click me"])
-```
-
-#### `state.js`
-
-Responsible for storing and updating application state.
-
-Example:
-
-```js
-const store = createStore({
-    count: 0
-})
-```
-
-#### `router.js`
-
-Responsible for changing and reading the URL.
-
-Example:
-
-```js
-router.navigate("/todos")
-```
-
-#### `index.js`
-
-The public API of the framework.
-
-It exports the functions that applications can use.
+1.  **Folder Structure:** Ensure you maintain the following structure:
+    ```text
+    .
+    ├── docs/               # Detailed feature documentation
+    ├── src/
+    │   └── framework/      # Core framework logic (DOM, State, Events, Router)
+    └── Todo/               # TodoMVC Implementation using the framework
+        ├── index.html
+        ├── base.js
+        └── app.css
+    ```
+2.  **Run:** Open the root directory using a **Live Server** (e.g., VS Code Live Server extension).
+3.  **Navigation:** Open `/Todo/index.html` in your browser.
 
 ---
 
-## TodoMVC
+## 🛠Features
 
-The `todo/` folder contains the application built using the framework.
+### 1. Abstracting the DOM
+Our framework sees the DOM as a large JavaScript object. Instead of manual manipulation, we use a **Virtual DOM**.
+- **The `h()` function:** Allows developers to define UI structures as nested objects.
+- **Diffing Engine:** The `patch()` function compares the current UI state with the new state and updates only the necessary elements.
 
-```text
-todo/
-│
-├── app.js
-├── components.js
-└── state.js
-```
+### 2. State Management
+State is the "Single Source of Truth."
+- **Reactivity:** Using JavaScript **Proxies**, the framework automatically detects data changes.
+- **Inversion of Control:** When state changes, the framework "calls you" by triggering a re-render of the components automatically.
+- **Persistence:** Integrated with `localStorage` to keep data across sessions.
 
-### `app.js`
+### 3. Routing System
+A built-in **Hash-Router** synchronizes the application state with the URL.
+- Supports "All", "Active", and "Completed" filters.
+- Integrates with the browser's Back/Forward buttons without page refreshes.
 
-Starts the TodoMVC application.
-
-### `components.js`
-
-Contains the TodoMVC UI components.
-
-Examples:
-
-* Todo input
-* Todo list
-* Todo item
-* Footer
-* Filters
-
-### `state.js`
-
-Contains the TodoMVC state and actions.
-
-Example state:
-
-```js
-{
-    todos: [],
-    filter: "all"
-}
-```
+### 4. Custom Event Handling
+We avoid `addEventListener` in component logic. 
+- **Event Delegation:** One single listener at the root manages all events, improving performance.
+- **Custom API:** Developers register events declaratively within the `h()` function attributes.
 
 ---
 
-## How the Framework Works
+## Framework Documentation
 
-The framework follows this simple flow:
+### How to Create an Element
+Elements are created using the `h(type, props, children)` function.
 
-```text
-User Action
-    │
-    ▼
-  Events
-    │
-    ▼
-   State
-    │
-    ▼
-   Render
-    │
-    ▼
-   DOM
+```javascript
+// Creating a simple div with a class and text
+const myElement = h('div', { class: 'container' }, 'Hello World');
 ```
 
-For example, when the user clicks a button:
+### How to Add Attributes
+Attributes (and CSS classes) are passed as the second argument (the `props` object).
 
-```text
-Click
-  │
-  ▼
-Event Handler
-  │
-  ▼
-State Changes
-  │
-  ▼
-Framework Renders
-  │
-  ▼
-DOM Updates
+```javascript
+h('input', { 
+    type: 'text', 
+    placeholder: 'Insert Name', 
+    class: 'name-input',
+    value: state.name 
+});
 ```
+
+### How to Nest Elements
+Nesting is achieved by passing an array of `h()` calls as the third argument.
+
+```javascript
+h('div', { class: 'parent' }, [
+    h('h1', {}, 'Title'),
+    h('p', {}, 'This is a nested paragraph.')
+]);
+```
+
+### How to Create an Event
+Our framework uses a custom Event API. Events are defined in the `props` object using the `on` prefix.
+
+```javascript
+h('button', { 
+    onclick: (e) => console.log('Clicked!'),
+    onmouseenter: (e) => handleHover(e)
+}, 'Click Me');
+```
+*Note: These are handled internally by the `EventManager` via delegation on the `#root` element.*
 
 ---
 
-## DOM Abstraction
+##  Why things work the way they work
 
-Instead of manipulating the DOM directly, the framework provides an `h()` function.
+### The Virtual DOM Approach
+Directly touching the DOM is slow. By using a **Virtual DOM**, we create a "Middle Man." When you add a Todo, we create a new JS Object, compare it to the old one, and find that only one `<li>` needs to be added. This keeps the application fast and prevents the user from losing focus on input fields.
 
-```js
-h("button", {
-    class: "btn"
-}, [
-    "Click me"
-])
-```
+### Inversion of Control
+In a library, you call the code. In this **Framework**, the framework is in charge. You provide the **State** and the **Component Blueprint**, and the framework decides *when* to render and *how* to efficiently update the browser.
 
-The framework converts this representation into a real DOM element.
-
-Elements can also be nested:
-
-```js
-h("div", { class: "container" }, [
-    h("h1", {}, ["My App"]),
-    h("p", {}, ["Welcome"]),
-    h("button", {}, ["Click"])
-])
-```
+### Event Delegation
+In a "Massive Project" like TodoMVC, there are many interactive elements. Instead of consuming memory by attaching 100 listeners to 100 buttons, our `EventManager` attaches **one** listener to the root. It uses the "Bubbling" principle to identify which element was clicked and executes the stored framework handler.
 
 ---
 
-## State Management
-
-The framework provides a central store.
-
-```js
-const store = createStore({
-    count: 0
-})
-```
-
-The state can be read:
-
-```js
-store.getState()
-```
-
-and updated:
-
-```js
-store.setState({
-    count: 1
-})
-```
-
-When the state changes, the application is rendered again.
+## 🔗 Detailed Documentation
+For deep dives into specific systems, please see:
+- [Event Handling](./docs/Event_Handling.md)
+- [Routing System](./docs/Routing.md)
+- [State Management](./docs/state_management.md)
+- [Virtual DOM Engine](./docs/VirtualDom.md)
 
 ---
-
-## Routing
-
-The router connects the application state with the URL.
-
-Example routes:
-
-```text
-/
- /todos
- /about
-```
-
-Navigation can be done with:
-
-```js
-router.navigate("/todos")
-```
-
-The page can change without reloading the browser.
-
----
-
-## Event Handling
-
-Events are defined through the framework instead of directly using `addEventListener()`.
-
-Example:
-
-```js
-h("button", {
-    on: {
-        click: () => {
-            console.log("Button clicked")
-        }
-    }
-}, ["Click"])
-```
-
-The framework handles the browser event internally.
-
----
-
-## TodoMVC
-
-TodoMVC demonstrates that the framework can be used to build a real application.
-
-The application supports:
-
-* Adding todos
-* Completing todos
-* Editing todos
-* Deleting todos
-* Filtering todos
-* Clearing completed todos
-* Showing remaining todos
-
----
-
-## Main Architecture
-
-```text
-                 MINI FRAMEWORK
-                       │
-       ┌───────────────┼───────────────┐
-       │               │               │
-       ▼               ▼               ▼
-      DOM            STATE           ROUTER
-       │               │               │
-       └───────────────┼───────────────┘
-                       │
-                       ▼
-                    EVENTS
-                       │
-                       ▼
-                    TODO MVC
-```
-
-The framework provides the tools, and TodoMVC uses those tools to create the application.
