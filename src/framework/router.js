@@ -20,10 +20,11 @@ class AppRouter {
     handleRouteChange() {
         const path = window.location.hash || this.defaultRoute;
         this.currentPath = path;
-        const component = this.routes[path];
+        const action = this.routes[path];
 
-        if (component) {
-            this.notify(component);
+        if (action) {
+            action();
+            this.notify(action);
         } else {
             console.warn(`[Router] No route found for: ${path}`);
         }

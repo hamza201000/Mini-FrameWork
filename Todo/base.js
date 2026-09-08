@@ -56,13 +56,13 @@ ondblclick: () => {
 }
 };
 
-new AppRouter({
-    routes: {
-        '#/': () => state.route = '#/',
-        '#/active': () => state.route = '#/active',
-        '#/completed': () => state.route = '#/completed'
-    }
-});
+// new AppRouter({
+//     routes: {
+//         '#/': () => state.route = '#/',
+//         '#/active': () => state.route = '#/active',
+//         '#/completed': () => state.route = '#/completed'
+//     }
+// });
 
 const TodoItem = (todo) => {
     const isEditing = state.editingId === todo.id;
@@ -86,10 +86,12 @@ const TodoItem = (todo) => {
 };
 
 const App = () => {
-    const filtered = state.todos.filter(t => 
-        state.route === '#/active' ? !t.completed : 
-        state.route === '#/completed' ? t.completed : true
-    );
+    const filtered = state.todos.filter(t => {
+        if (state.route === '#/active') return !t.completed;
+        if (state.route === '#/completed') return t.completed;
+        return true;
+    });
+
     const activeCount = state.todos.filter(t => !t.completed).length;
 
     return h('div', { class: 'todoapp' }, [
@@ -132,4 +134,12 @@ function render() {
     }
     oldV = newV;
 }
+new AppRouter({
+    routes: {
+        '#/':          () => { state.route = '#/'; },
+        '#/active':    () => { state.route = '#/active'; },
+        '#/completed': () => { state.route = '#/completed'; }
+    }
+});
+
 render();
