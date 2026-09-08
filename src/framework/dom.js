@@ -1,100 +1,92 @@
-
-// DOM ABSTRACTION
+// dom abstruction
 export function h(type, props = {}, ...children) {
     return {
         type,
         props: props || {},
-        children: children.flat().filter(c => c !== null && c !== false)
+        children: children.flat(2).filter(c => c !== null && c !== undefined && c !== false)
     };
 }
-
-// DOM CREATION
+// dooom creation 
 export function createElm(vnode) {
     if (typeof vnode === "string" || typeof vnode === "number") {
         return document.createTextNode(String(vnode));
     }
 
+    if (!vnode || !vnode.type) return document.createTextNode("");
+
     const element = document.createElement(vnode.type);
-    element._handlers = {}; // Object sghir khssiss l-events
+    element._handlers = {}; 
 
-    for (const [key, value] of Object.entries(vnode.props)) {
-        if (key.startsWith('on')) {
-            const eventType = key.slice(2).toLowerCase();
-            element._handlers[eventType] = value; // Khzen l-function بلا addEventListener
-        } else if (key === 'value' || key === 'checked') {
-            element[key] = value;
-        } else {
-            element.setAttribute(key, value);
-        }
+    for (const [key, value] of Object.entries(vnode.props || {})) {
+        updateSingleProp(element, key, value);
     }
 
-    for (const child of vnode.children) {
-        element.appendChild(createElm(child));
-    }
-
+    vnode.children.forEach(child => element.appendChild(createElm(child)));
     return element;
 }
 
-// UPDATE ATTRIBUTES
-function updateAttrs(el, newProps = {}, oldProps = {}) {
-    if (!el || !el.setAttribute) return;
-
-    if (!el._handlers) el._handlers = {};
-
-    // 1. Remove old props
-    Object.keys(oldProps).forEach(key => {
-        if (!(key in newProps)) {
-            if (key.startsWith('on')) {
-                const eventType = key.slice(2).toLowerCase();
-                delete el._handlers[eventType];
-            } else {
-                el.removeAttribute(key);
-            }
-        }
-    });
-
-    // 2. Update new props
-    Object.entries(newProps).forEach(([key, value]) => {
-        if (newProps[key] !== oldProps[key]) {
-            if (key.startsWith('on')) {
-                const eventType = key.slice(2).toLowerCase();
-                el._handlers[eventType] = value; // Update function f memory direct
-            } else if (key === 'value' || key === 'checked') {
-                el[key] = value;
-            } else {
-                el.setAttribute(key, value);
-            }
-        }
-    });
+// attribute mangment 
+function updateSingleProp(el, key, value) {
+    if (key.startsWith('on')) {
+        el._handlers[key.slice(2).toLowerCase()] = value;
+    } else if (key === 'value' || key === 'checked') {
+        el[key] = value;
+    } else if (key === 'class' || key === 'className') {
+        el.setAttribute('class', value || '');
+    } else {
+        if (value === undefined) el.removeAttribute(key);
+        else el.setAttribute(key, value);
+    }
 }
-
-// RECONCILIATION (PATCH)
+// reconcilition
 export function patch(parent, newVNode, oldVNode, index = 0) {
-    const el = parent ? parent.childNodes[index] : null;
+    const el = parent.childNodes[index];
 
+    // 1. DELETE: If new node is missing, remove the real element
     if (newVNode === undefined) {
         if (el) parent.removeChild(el);
+        return true; // Signal that an element was removed
     } 
-    else if (oldVNode === undefined || !el) {
-        parent.appendChild(createElm(newVNode));
-    } 
-    else if (
-        typeof newVNode !== typeof oldVNode ||
-        (typeof newVNode === 'string' && newVNode !== oldVNode) ||
-        newVNode.type !== oldVNode.type
-    ) {
- if (newVNode !== oldVNode) {
-        el.nodeValue = newVNode; 
-    }    } 
-    else if (newVNode.type) {
-        updateAttrs(el, newVNode.props, oldVNode.props);
 
-        const newChildren = newVNode.children || [];
-        const oldChildren = oldVNode.children || [];
-        const max = Math.max(newChildren.length, oldChildren.length);
+    // 2. CREATE: If no old node exists, add it
+    if (oldVNode === undefined || !el) {
+        parent.appendChild(createElm(newVNode));
+        return false;
+    } 
+
+    // 3. REPLACE: If type changed (e.g., String to Tag, or Div to Span)
+    if (typeof newVNode !== typeof oldVNode || (newVNode.type !== oldVNode.type)) {
+        parent.replaceChild(createElm(newVNode), el);
+        return false;
+    }
+
+    // 4. UPDATE TEXT: If both are strings
+    if (typeof newVNode === 'string' || typeof newVNode === 'number') {
+        if (newVNode !== oldVNode) {
+            el.nodeValue = String(newVNode);
+        }
+        return false;
+    }
+
+    // 5. UPDATE ELEMENT: Same tag, update props and children
+    if (newVNode.type) {
+        // Update Props
+        const allProps = new Set([...Object.keys(newVNode.props || {}), ...Object.keys(oldVNode.props || {})]);
+        allProps.forEach(key => {
+            if (newVNode.props[key] !== oldVNode.props[key]) {
+                updateSingleProp(el, key, newVNode.props[key]);
+            }
+        });
+
+        // Update Children
+        const newCh = newVNode.children || [];
+        const oldCh = oldVNode.children || [];
+        const max = Math.max(newCh.length, oldCh.length);
         
-        for (let i = 0; i < max; i++) {
-            patch(el, newChildren[i], oldChildren[i], i);
+        // Loop backwards when deleting to avoid index drift
+        for (let i = max - 1; i >= 0; i--) {
+            patch(el, newCh[i], oldCh[i], i);
         }
     }
+    return false;
 }

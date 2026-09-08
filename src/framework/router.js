@@ -1,3 +1,4 @@
+// single page application (spa)
 class AppRouter {
     constructor(options = {}) {
         this.routes = options.routes || {};
@@ -22,7 +23,7 @@ class AppRouter {
         this.currentPath = path;
         const action = this.routes[path];
 
-        if (action) {
+        if (action && typeof action === 'function') {
             action();
             this.notify(action);
         } else {
@@ -30,14 +31,13 @@ class AppRouter {
         }
     }
 
-    // Navigate programmatically (e.g. router.navigate('#/active'))
     navigate(path) {
         window.location.hash = path;
     }
 
     subscribe(callback) {
         this.subscribers.push(callback);
-        this.handleRouteChange(); // trigger immediately on subscribe
+        this.handleRouteChange(); 
         return () => {
             this.subscribers = this.subscribers.filter(s => s !== callback);
         };
@@ -47,7 +47,6 @@ class AppRouter {
         this.subscribers.forEach(cb => cb(component));
     }
 
-    // Cleanup: removes the hashchange listener
     destroy() {
         window.removeEventListener('hashchange', this._onHashChange);
     }

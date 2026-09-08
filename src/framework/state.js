@@ -1,10 +1,8 @@
-// 1. Private Variables (Encapsulation)
+// staaate managment recivity system 
 let store = {};
 const listeners = new Set();
 const refs = new Map();
 
-// --- HELPER: Deep Equality Check ---
-// Essential for optimization (Requirement: Virtual DOM / Diffing)
 export function isEqual(a, b) {
     if (a === b) return true;
     if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
@@ -17,7 +15,6 @@ export function isEqual(a, b) {
     return true;
 }
 
-// --- STATE MANAGEMENT (Requirement: Reachable at all times) ---
 export const getState = () => ({ ...store });
 
 export const setState = (newState) => {
@@ -31,10 +28,8 @@ export const setState = (newState) => {
     notify(oldStore);
 };
 
-// --- SUBSCRIPTION (Requirement: Inversion of Control) ---
 export const subscribe = (listener) => {
     listeners.add(listener);
-    // Return unsubscribe function
     return () => listeners.delete(listener);
 };
 
@@ -42,8 +37,6 @@ const notify = (oldStore) => {
     listeners.forEach(listener => listener({ store, oldStore }));
 };
 
-// --- REF MANAGEMENT (Requirement: Event Handling) ---
-// Allows the developer to access real DOM elements safely
 export const createRef = () => ({ current: null });
 
 export const setRef = (key, element) => {
@@ -58,16 +51,12 @@ export const removeRef = (key) => {
     refs.delete(key);
 };
 
-// --- VDOM HELPER (Requirement: Abstracting the DOM) ---
-// This handles the cloning of the tree to prevent direct mutation
+
 export const syncVdom = (newDom) => {
     return JSON.parse(JSON.stringify(newDom));
 };
 
-// --- STORE FACTORY (Requirement: Reachable at all times) ---
-// Creates a reactive store using a Proxy.
-// Any direct property assignment (e.g. state.count++) automatically
-// triggers the provided notifyCallback so the UI re-renders.
+
 export function createStore(initialState, notifyCallback) {
     return new Proxy(initialState, {
         set(target, key, value) {
