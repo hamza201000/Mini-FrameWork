@@ -116,12 +116,11 @@ const state = createStore({
     route: window.location.hash || '#/'
 }, () => {
     render();
-   
 });
 
 const actions = {
     addTodo: () => {
-        if (state.draft.trim().length < 0) return;
+        if (state.draft.trim().length <= 0) return;
         state.todos = [...state.todos, { id: Date.now(), title: state.draft.trim(), completed: false }];
         state.draft = '';
     },
