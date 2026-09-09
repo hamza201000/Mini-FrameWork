@@ -13,7 +13,7 @@ export class EventManager {
         while (current && current !== this.root.parentElement) { 
             if (current._handlers && current._handlers[event.type]) {
                 current._handlers[event.type](event);
-                break;
+                break;  
             }
             current = current.parentElement;
         }
@@ -32,9 +32,5 @@ export class EventManager {
         }
     }
 
-    emit(element, eventType, data) {
-        if (element._handlers && element._handlers[eventType]) {
-            element._handlers[eventType](data);
-        }
-    }
+ 
 }

@@ -1,4 +1,6 @@
 // dom abstruction
+import { EventManager } from "./event.js";
+let eventManager=new EventManager()
 export function h(type, props = {}, ...children) {
     return {
         type,
@@ -25,19 +27,47 @@ export function createElm(vnode) {
     return element;
 }
 
-// attribute mangment 
+// Attribute management
 function updateSingleProp(el, key, value) {
+
+    // Events
     if (key.startsWith('on')) {
-        el._handlers[key.slice(2).toLowerCase()] = value;
-    } else if (key === 'value' || key === 'checked') {
+        const eventType = key.slice(2).toLowerCase();
+
+        if (value === undefined || value === null) {
+            if (eventManager) {
+                eventManager.off(el, eventType);
+            }
+        } else {
+            if (eventManager) {
+                eventManager.on(el, eventType, value);
+            }
+        }
+
+        return;
+    }
+
+    // value / checked
+    if (key === 'value' || key === 'checked') {
         el[key] = value;
-    } else if (key === 'class' || key === 'className') {
+        return;
+    }
+
+    // class
+    if (key === 'class' || key === 'className') {
         el.setAttribute('class', value || '');
+        return;
+    }
+
+    // normal attributes
+    if (value === undefined || value === null) {
+        el.removeAttribute(key);
     } else {
-        if (value === undefined) el.removeAttribute(key);
-        else el.setAttribute(key, value);
+        el.setAttribute(key, value);
     }
 }
+
+
 // reconcilition
 export function patch(parent, newVNode, oldVNode, index = 0) {
     const el = parent.childNodes[index];
