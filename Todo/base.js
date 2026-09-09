@@ -56,7 +56,7 @@ const App = () => {
                 onkeydown: (e) => { if (e.key === 'Enter') actions.addTodo(); }
             })
         ]),
-        [
+        state.todos.length> 0 ? [
             h('section', { class: 'main' }, [
                 h('input', { 
                     id: 'toggle-all', 
@@ -77,7 +77,19 @@ const App = () => {
                 ]),
                 state.todos.some(t => t.completed) ? h('button', { class: 'clear-completed', onclick: actions.clearCompleted }, 'Clear completed') : null
             ])
-        ] 
+        ] : [
+            h('section', { class: 'main' }, [
+                h('input', { 
+                    id: 'toggle-all', 
+                    class: 'toggle-all', 
+                    type: 'checkbox', 
+                    checked: activeCount === 0,
+                    onchange: (e) => actions.toggleAll(e.target.checked) 
+                }),
+                h('ul', { class: 'todo-list' }, filtered.map(TodoItem))
+            ]),
+           
+        ]
     ]);
 };
 
@@ -98,18 +110,18 @@ function render() {
 
 // staaaate and actions
 const state = createStore({
-    todos: JSON.parse(localStorage.getItem('todos-js') || '[]'),
+    todos: [],
     draft: '',
     editingId: null,
     route: window.location.hash || '#/'
 }, () => {
     render();
-    localStorage.setItem('todos-js', JSON.stringify(state.todos));
+   
 });
 
 const actions = {
     addTodo: () => {
-        if (state.draft.trim().length < 2) return;
+        if (state.draft.trim().length < 0) return;
         state.todos = [...state.todos, { id: Date.now(), title: state.draft.trim(), completed: false }];
         state.draft = '';
     },
