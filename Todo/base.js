@@ -56,7 +56,7 @@ const App = () => {
                 onkeydown: (e) => { if (e.key === 'Enter') actions.addTodo(); }
             })
         ]),
-        state.todos.length > 0 ? [
+        [
             h('section', { class: 'main' }, [
                 h('input', { 
                     id: 'toggle-all', 
@@ -77,7 +77,7 @@ const App = () => {
                 ]),
                 state.todos.some(t => t.completed) ? h('button', { class: 'clear-completed', onclick: actions.clearCompleted }, 'Clear completed') : null
             ])
-        ] : null
+        ] 
     ]);
 };
 
