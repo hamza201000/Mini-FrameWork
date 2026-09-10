@@ -69,15 +69,18 @@ export function patch(parent, newVNode, oldVNode, index = 0) {
 
     if (newVNode === undefined) {
         if (el) parent.removeChild(el);
-        return true; // Signal that an element was removed
-    } 
+        return true;
+    }
 
     if (oldVNode === undefined || !el) {
         parent.appendChild(createElm(newVNode));
         return false;
-    } 
+    }
 
-    if (typeof newVNode !== typeof oldVNode || (newVNode.type !== oldVNode.type)) {
+    if (
+        typeof newVNode !== typeof oldVNode ||
+        newVNode.type !== oldVNode.type
+    ) {
         parent.replaceChild(createElm(newVNode), el);
         return false;
     }
@@ -90,7 +93,11 @@ export function patch(parent, newVNode, oldVNode, index = 0) {
     }
 
     if (newVNode.type) {
-        const allProps = new Set([...Object.keys(newVNode.props || {}), ...Object.keys(oldVNode.props || {})]);
+        const allProps = new Set([
+            ...Object.keys(newVNode.props || {}),
+            ...Object.keys(oldVNode.props || {})
+        ]);
+
         allProps.forEach(key => {
             if (newVNode.props[key] !== oldVNode.props[key]) {
                 updateSingleProp(el, key, newVNode.props[key]);
@@ -99,11 +106,25 @@ export function patch(parent, newVNode, oldVNode, index = 0) {
 
         const newCh = newVNode.children || [];
         const oldCh = oldVNode.children || [];
-        const max = Math.max(newCh.length, oldCh.length);
-        
-        for (let i = max - 1; i >= 0; i--) {
+
+        // If children structure changed, rebuild them
+        if (newCh.length !== oldCh.length) {
+            while (el.firstChild) {
+                el.removeChild(el.firstChild);
+            }
+
+            newCh.forEach(child => {
+                el.appendChild(createElm(child));
+            });
+
+            return false;
+        }
+
+        // Same structure → normal reconciliation
+        for (let i = 0; i < newCh.length; i++) {
             patch(el, newCh[i], oldCh[i], i);
         }
     }
+
     return false;
 }

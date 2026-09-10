@@ -23,9 +23,7 @@ class AppRouter {
         }
     }
 
-    navigate(path) {
-        window.location.hash = path;
-    }
+  
 }
 
 export default AppRouter;
