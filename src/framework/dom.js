@@ -64,11 +64,15 @@ function updateSingleProp(el, key, value) {
 
 
 // reconcilition
-export function patch(parent, newVNode, oldVNode, index = 0) {
+export function patch(parent, newVNode, oldVNode, index = 0,i=0) {
     const el = parent.childNodes[index];
 
     if (newVNode === undefined) {
+       
+        
         if (el) parent.removeChild(el);
+        console.log(parent.childNodes[index],"index",index);
+        // console.log(newVNode[index],"index",index);
         return true;
     }
 
@@ -108,21 +112,26 @@ export function patch(parent, newVNode, oldVNode, index = 0) {
         const oldCh = oldVNode.children || [];
 
         // If children structure changed, rebuild them
-        if (newCh.length !== oldCh.length) {
-            while (el.firstChild) {
-                el.removeChild(el.firstChild);
-            }
+    // ARE YOU GUYS DONG HARD CODE NO NO!!  HAHAHA
+        // if (newCh.length !== oldCh.length) {
+        //     while (el.firstChild) {
+        //         el.removeChild(el.firstChild);
+        //     }
 
-            newCh.forEach(child => {
-                el.appendChild(createElm(child));
-            });
+        //     newCh.forEach(child => {
+        //         el.appendChild(createElm(child));
+        //     });
 
-            return false;
-        }
+        //     return false;
+        // }
 
         // Same structure → normal reconciliation
-        for (let i = 0; i < newCh.length; i++) {
-            patch(el, newCh[i], oldCh[i], i);
+        const lop=Math.max(newCh.length,oldCh.length)
+        let index1=0
+        for (let i = 0; i < lop; i++) {
+            if (!patch(el, newCh[i], oldCh[i],index1, i)){
+                index1++;
+            }
         }
     }
 
